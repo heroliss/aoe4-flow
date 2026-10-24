@@ -5,7 +5,7 @@
 普通权限下它静默失败（返回 0），自动操作期间无法屏蔽鼠标键盘，容易被人为误触打断。
 因此启动时若发现不是管理员，就尝试用 UAC 提升重新启动一份管理员进程。
 
-开发期想跳过提升（避免反复弹 UAC）：设环境变量 AOE4_NO_ELEVATE=1。
+开发期想跳过提升（避免反复弹 UAC）：设环境变量 AOE4_FLOW_NO_ELEVATE=1。
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def ensure_admin_or_warn(prompt=print) -> bool:
 
     返回值语义（供调用方决定后续动作）：
     - True ：已是管理员，照常继续。
-    - False：未提升成功——要么设了 AOE4_NO_ELEVATE，要么用户拒绝了 UAC。
+    - False：未提升成功——要么设了 AOE4_FLOW_NO_ELEVATE，要么用户拒绝了 UAC。
              调用方应【带警告继续】以普通权限运行（编辑仍可用，但“输入屏蔽”不会生效）。
 
     若自提升【成功】，本函数会直接 sys.exit(0) 退出当前普通权限进程
@@ -66,8 +66,10 @@ def ensure_admin_or_warn(prompt=print) -> bool:
     if is_admin():
         return True
 
-    if os.environ.get("AOE4_NO_ELEVATE"):
-        prompt("[提示] 未以管理员身份运行（AOE4_NO_ELEVATE 已设，跳过自提升）——"
+    # 历史环境变量仍有效，已有启动脚本无需调整。
+    no_elevate = os.environ.get("AOE4_FLOW_NO_ELEVATE", os.environ.get("AOE4_NO_ELEVATE"))
+    if no_elevate:
+        prompt("[提示] 未以管理员身份运行（AOE4_FLOW_NO_ELEVATE 已设，跳过自提升）——"
                "“输入屏蔽”将不生效，仅供编辑/调试。")
         return False
 

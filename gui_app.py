@@ -1,5 +1,5 @@
 """
-AOE4 自动生产村民工具 - 图形界面
+AoE4 Flow 经典出农工具 - 图形界面
 使用 tkinter 构建，提供启动/停止/暂停控制、日志输出、状态栏、配置显示、帮助和快捷键
 """
 import sys
@@ -532,12 +532,12 @@ class TextRedirector:
             self._buffer = ""
 
 
-class AOE4App:
-    """AOE4 自动生产村民工具 GUI"""
+class AoE4LegacyApp:
+    """AoE4 Flow 经典出农工具 GUI"""
 
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("AOE4 自动生产村民工具")
+        self.root.title("AoE4 Flow 经典出农工具")
         self.root.geometry("760x640")
         self.root.resizable(True, True)
         self.root.minsize(560, 460)
@@ -632,7 +632,7 @@ class AOE4App:
 
         title_label = ttk.Label(
             header,
-            text=f"AOE4 自动生产村民工具  v{self._version}",
+            text=f"AoE4 Flow 经典出农工具  v{self._version}",
             font=("Microsoft YaHei UI", 16, "bold")
         )
         title_label.pack(side=tk.LEFT)
@@ -1833,7 +1833,7 @@ class AOE4App:
 
     def _show_help(self):
         help_win = tk.Toplevel(self.root)
-        help_win.title("帮助 - AOE4 自动生产村民工具")
+        help_win.title("帮助 - AoE4 Flow 经典出农工具")
         help_win.geometry("680x560")
         help_win.resizable(True, True)
 
@@ -1845,7 +1845,7 @@ class AOE4App:
 
         help_content = """\
 ═══════════════════════════════════════
-     AOE4 自动生产村民工具 - 使用帮助
+     AoE4 Flow 经典出农工具 - 使用帮助
 ═══════════════════════════════════════
 
 【工具原理】
@@ -3278,7 +3278,7 @@ class AOE4App:
 
             # === 初始化 ===
             print("\n" + "=" * 50, flush=True)
-            print(f"  AOE4 自动生产村民工具 v{self._version} (GUI模式)", flush=True)
+            print(f"  AoE4 Flow 经典出农工具 v{self._version} (GUI模式)", flush=True)
             print("=" * 50, flush=True)
 
             # 1. 检测运行环境
@@ -3711,7 +3711,7 @@ class AOE4App:
 
 
 def main():
-    app = AOE4App()
+    app = AoE4LegacyApp()
     app.run()
 
 

@@ -4,7 +4,7 @@
 存什么：使用过程中的“临时信息”——上次打开的流程、使用模式下的临时调参、窗口偏好等。
         这些既不属于流程定义(.flow.json)，也不该污染程序目录或代码仓库。
 
-存哪里：%APPDATA%\\AOE4AutoVillager\\settings.json（Windows 约定的“漫游”用户配置目录）。
+存哪里：%APPDATA%\\AoE4Flow\\settings.json；首次读取时兼容旧版目录中的配置。
 为什么不放程序同目录：(1) 程序可能装在 Program Files，普通权限写不了；
                       (2) 重装/更新会被清掉；(3) 会污染代码仓库（旧版 .editor_state.json 一直显示为已修改）。
         流程文件与模板仍留在程序目录——那是用户整理的“内容”，不是会话状态。
@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 import os
 
-APP_NAME = "AOE4AutoVillager"
+APP_NAME = "AoE4Flow"
+# 仅作为兼容读取来源：保留旧版设置，不移动或删除用户数据。
+LEGACY_SETTINGS_DIR = "AOE4AutoVillager"
 
 
 def settings_dir() -> str:
@@ -32,11 +34,16 @@ def settings_path() -> str:
 
 
 def load_settings() -> dict:
+    current = settings_path()
+    legacy = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"),
+                          LEGACY_SETTINGS_DIR, "settings.json")
+    # 新设置存在后不再回退，防止用户清空偏好后重新带回旧值。
+    source = current if os.path.exists(current) else legacy
     try:
-        with open(settings_path(), "r", encoding="utf-8") as fp:
+        with open(source, "r", encoding="utf-8") as fp:
             d = json.load(fp)
             return d if isinstance(d, dict) else {}
-    except Exception:
+    except (OSError, ValueError):
         return {}
 
 

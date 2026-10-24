@@ -1,5 +1,5 @@
 """
-AOE4 自动生产村民工具
+AoE4 Flow 经典出农工具
 
 满足以下全部条件时自动生产村民：
   1. 当前处于游戏窗口
@@ -112,7 +112,7 @@ from version import __version__ as _VERSION
 # 立即打印启动信息（避免模块导入期间的卡顿）
 print()
 print("=" * 50, flush=True)
-print(f"  AOE4 自动生产村民工具  v{_VERSION}", flush=True)
+print(f"  AoE4 Flow 经典出农工具  v{_VERSION}", flush=True)
 print("  正在加载模块，请稍候...", flush=True)
 print("=" * 50, flush=True)
 print(flush=True)

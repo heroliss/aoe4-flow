@@ -1,5 +1,5 @@
 """
-AOE4 自动生产村民工具 - PyInstaller 打包脚本
+AoE4 Flow 经典出农工具 - PyInstaller 打包脚本
 
 使用方法：
     python build.py              # 打包旧版GUI CPU精简版（复用已有虚拟环境）
@@ -17,15 +17,17 @@ AOE4 自动生产村民工具 - PyInstaller 打包脚本
 依赖安装：
     pip install pyinstaller
 
-打包完成后，exe文件在 build/aoe4_gui_cpu/ 目录中
+打包完成后，exe文件在 build/aoe4_flow_legacy_cpu/ 目录中
 """
 import os
 import sys
 import shutil
 import subprocess
+from pathlib import Path
+from version import __version__, PRODUCT_NAME
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(BASE_DIR, "build", "aoe4_gui_cpu")
+OUTPUT_DIR = os.path.join(BASE_DIR, "build", "aoe4_flow_legacy_cpu")
 VENV_DIR = os.path.join(BASE_DIR, "build", "_build_venv")
 
 
@@ -35,6 +37,10 @@ def clean_output():
         """安全删除目录，忽略权限错误"""
         if not os.path.exists(path):
             return
+        resolved = Path(path).resolve()
+        build_root = (Path(BASE_DIR) / "build").resolve()
+        if resolved == build_root or not resolved.is_relative_to(build_root):
+            raise ValueError(f"拒绝清理构建目录之外的路径: {resolved}")
         try:
             shutil.rmtree(path)
             print(f"  已清理: {path}")
@@ -167,7 +173,7 @@ def _setup_cpu_venv():
         [venv_python, "-c",
          "import torch; print(f'torch {torch.__version__}'); "
          "print(f'CUDA: {torch.cuda.is_available()}')"],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     print(f"  {result.stdout.strip()}")
 
@@ -176,7 +182,8 @@ def _setup_cpu_venv():
 
 
 def _build_with_venv(venv_python, entry_script, exe_name, output_dir, console_mode,
-                     extra_datas=None, extra_hiddenimports=None, collect_pkgs=None, icon_path=None):
+                     extra_datas=None, extra_hiddenimports=None, collect_pkgs=None, icon_path=None,
+                     require_admin=True):
     """使用虚拟环境的 Python 执行 PyInstaller 打包。
 
     extra_datas: 追加的 datas 条目(spec 字符串，如网页前端目录)；
@@ -192,7 +199,7 @@ def _build_with_venv(venv_python, entry_script, exe_name, output_dir, console_mo
     result = subprocess.run(
         [venv_python, "-c",
          "import easyocr, os; print(os.path.join(os.path.dirname(easyocr.__file__), 'model'))"],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     if result.returncode == 0 and result.stdout.strip():
         model_path = result.stdout.strip()
@@ -229,6 +236,16 @@ def _build_with_venv(venv_python, entry_script, exe_name, output_dir, console_mo
         )
 
     icon_repr = repr(icon_path) if icon_path else 'None'
+    # Windows 文件属性与窗口标题使用相同的品牌和版本。
+    version_path = os.path.join(BASE_DIR, "build", "aoe4-flow-version.txt")
+    version_parts = tuple(int(part) for part in __version__.split(".")) + (0,)
+    with open(version_path, "w", encoding="utf-8") as fp:
+        fp.write(f'''VSVersionInfo(ffi=FixedFileInfo(filevers={version_parts!r}, prodvers={version_parts!r},
+mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),
+kids=[StringFileInfo([StringTable('040904b0', [StringStruct('ProductName', '{PRODUCT_NAME}'),
+StringStruct('FileDescription', 'AoE4 Flow Visual Automation'),
+StringStruct('FileVersion', '{__version__}'), StringStruct('ProductVersion', '{__version__}'),
+StringStruct('OriginalFilename', '{exe_name}.exe')])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])])''')
 
     spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
 import os
@@ -291,7 +308,8 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon={icon_repr},
-    uac_admin=True,
+    version={version_path!r},
+    uac_admin={require_admin!r},
 )
 '''
 
@@ -345,7 +363,7 @@ def build_gui_cpu():
     _build_with_venv(
         venv_python=venv_python,
         entry_script="gui_app.py",
-        exe_name="AOE4-AutoVillager",
+        exe_name="AoE4-Flow-Legacy",
         output_dir=OUTPUT_DIR,
         console_mode=False,
     )
@@ -357,9 +375,9 @@ def build_gui_full():
     print("  打包 GUI 完整版（含GPU支持）")
     print("=" * 60)
 
-    full_output_dir = os.path.join(BASE_DIR, "build", "aoe4_gui_full")
+    full_output_dir = os.path.join(BASE_DIR, "build", "aoe4_flow_legacy_full")
     os.makedirs(full_output_dir, exist_ok=True)
-    pi_build_dir = os.path.join(BASE_DIR, "build", "aoe4_gui_full_build")
+    pi_build_dir = os.path.join(BASE_DIR, "build", "aoe4_flow_legacy_full_build")
     runtime_hook_path = _create_runtime_hook()
 
     easyocr_model_dir = None
@@ -418,7 +436,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='AOE4-AutoVillager-Full',
+    name='AoE4-Flow-Legacy-Full',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -436,7 +454,7 @@ exe = EXE(
 )
 '''
 
-    spec_path = os.path.join(BASE_DIR, "aoe4_gui_full.spec")
+    spec_path = os.path.join(BASE_DIR, "aoe4_flow_legacy_full.spec")
     with open(spec_path, 'w', encoding='utf-8') as f:
         f.write(spec_content)
 
@@ -456,7 +474,7 @@ exe = EXE(
         os.remove(spec_path)
 
     if result.returncode == 0:
-        exe_path = os.path.join(full_output_dir, 'AOE4-AutoVillager-Full.exe')
+        exe_path = os.path.join(full_output_dir, 'AoE4-Flow-Legacy-Full.exe')
         if os.path.exists(exe_path):
             size_mb = os.path.getsize(exe_path) / (1024 * 1024)
             print(f"\n  GUI 完整版打包成功!")
@@ -473,7 +491,7 @@ def build_cli():
     print("  打包命令行版本（CPU精简版）")
     print("=" * 60)
 
-    cli_output_dir = os.path.join(BASE_DIR, "build", "aoe4_cli_cpu")
+    cli_output_dir = os.path.join(BASE_DIR, "build", "aoe4_flow_cli_cpu")
     os.makedirs(cli_output_dir, exist_ok=True)
 
     venv_python = _setup_cpu_venv()
@@ -481,7 +499,7 @@ def build_cli():
     _build_with_venv(
         venv_python=venv_python,
         entry_script="main.py",
-        exe_name="AOE4-AutoVillager-CLI",
+        exe_name="AoE4-Flow-Legacy-CLI",
         output_dir=cli_output_dir,
         console_mode=True,
     )
@@ -498,7 +516,7 @@ def build_editor():
     print("  打包 节点编辑器（引擎, CPU精简版）")
     print("=" * 60)
 
-    editor_output_dir = os.path.join(BASE_DIR, "build", "aoe4_editor_cpu")
+    editor_output_dir = os.path.join(BASE_DIR, "build", "aoe4_flow_editor_cpu")
     os.makedirs(editor_output_dir, exist_ok=True)
 
     venv_python = _setup_cpu_venv()
@@ -506,7 +524,7 @@ def build_editor():
     _build_with_venv(
         venv_python=venv_python,
         entry_script="run_editor.py",
-        exe_name="AOE4-FlowEditor",
+        exe_name="AoE4-Flow",
         output_dir=editor_output_dir,
         console_mode=False,   # 纯窗口（pywebview 自带窗口，不需要控制台）。需排错时临时改 True 看报错。
         extra_datas=[
@@ -517,7 +535,8 @@ def build_editor():
             'webview', 'webview.platforms.winforms', 'clr', 'proxy_tools', 'bottle',
         ],
         collect_pkgs=['webview', 'pythonnet'],
-        icon_path=os.path.join(BASE_DIR, "templates", "cunmin.png"),   # 用村民图标做 exe 图标(PNG→ico 由 PyInstaller+Pillow 转)
+        icon_path=os.path.join(BASE_DIR, "templates", "aoe4-flow.ico"),
+        require_admin=False,  # 编辑/查看无需提升；输入屏蔽仍由启动逻辑按需请求权限。
     )
 
 
@@ -559,7 +578,6 @@ def main():
 
     print("\n" + "=" * 60)
     print("  打包完成!")
-    print(f"  输出目录: {OUTPUT_DIR}")
     print("=" * 60)
 
 

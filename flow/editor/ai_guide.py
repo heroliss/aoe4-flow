@@ -66,7 +66,7 @@ def _catalog(defs) -> str:
 
 def build_ai_guide(defs, version: int = 1) -> str:
     """defs = node_defs() 的返回值（节点目录）。返回一份 Markdown 指南字符串。"""
-    return f"""# AoE4 自动生产助手 · 流程图(.flow.json)编写指南（写给 AI）
+    return f"""# AoE4 Flow · 帝国时代 4 自动化助手 · 流程图(.flow.json)编写指南（写给 AI）
 
 你将通过【直接编辑一个 .flow.json 文件】来搭建/修改"流程"。一个流程＝一张节点图：程序每隔几秒触发一次，从入口节点沿"执行线"走一遍——识别屏幕(截图/OCR/模板匹配)→判断→向游戏发按键/鼠标，实现自动化(典型用途：自动出兵/出农)。
 

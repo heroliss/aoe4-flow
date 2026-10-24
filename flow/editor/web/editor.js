@@ -1,4 +1,4 @@
-// AOE4 Flow Editor —— LiteGraph 前端胶水
+// AoE4 Flow 帝国时代 4 自动化助手 —— LiteGraph 前端胶水
 // 职责：注册 LiteGraph 节点类型并建图；编辑后回传保存。
 // 启动数据（节点定义/初始流程/内置列表）由 Python 主动 push 进来（window.__bootstrap__），
 // 若未收到再回退到 js_api 拉取。连线 exec/data 归类、参数类型回解析都在 Python 侧完成。
@@ -12,7 +12,7 @@ const ED = (function () {
   let selectedGroupId = null;   // 当前选中的【组】id（组像节点一样可选中；右下角显示组的详情/暴露参数）。与 selectedNode 互斥。
   let seq = 1;
   let booted = false;
-  let APP_TITLE = "AoE4 自动生产助手";   // 程序名（启动时由后端 app_info 覆盖；窗口标题 document.title 用它）
+  let APP_TITLE = "AoE4 Flow · 帝国时代 4 自动化助手";   // 程序名（启动时由后端 app_info 覆盖；窗口标题 document.title 用它）
   // 当前流程的元信息：名称/说明/文件路径/是否内置只读（保存时内置会被改为另存）
   let flowMeta = { name: "", desc: "", path: null, readonly: false };
   // 控制面板置顶项：有序的 [nodeId, paramKey, 自定义显示名?]（随流程保存）。
@@ -364,9 +364,9 @@ const ED = (function () {
     };
 
     // 右键菜单过高时内部滚动（而不是整体上下移动）
-    if (!document.getElementById("aoe4-style")) {
+    if (!document.getElementById("aoe4-flow-style")) {
       const st = document.createElement("style");
-      st.id = "aoe4-style";
+      st.id = "aoe4-flow-style";
       st.textContent = ".litecontextmenu{max-height:84vh!important;overflow-y:auto!important;overflow-x:hidden;}";
       document.head.appendChild(st);
     }
@@ -2170,10 +2170,14 @@ const ED = (function () {
     const ns = graph._nodes;
     if (!ns.length) return;
     let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-    for (const n of ns) {
-      x0 = Math.min(x0, n.pos[0]); y0 = Math.min(y0, n.pos[1] - 20);
-      x1 = Math.max(x1, n.pos[0] + n.size[0]); y1 = Math.max(y1, n.pos[1] + n.size[1]);
+    // 适配当前可见的节点/折叠箱体；隐藏成员的位置不应把视图拉得很远。
+    const fi = foldHidden.size ? foldInfo() : null;
+    const boxes = trackVisibleBoxes(fi);
+    for (const box of boxes) {
+      x0 = Math.min(x0, box.a); y0 = Math.min(y0, box.ay);
+      x1 = Math.max(x1, box.b); y1 = Math.max(y1, box.by);
     }
+    if (!boxes.length) return;
     const cw = canvas.canvas.width, ch = canvas.canvas.height;
     const lo = (typeof minScale === "number") ? minScale : 0.15;
     const s = Math.max(lo, Math.min(1.4, Math.min((cw - 60) / (x1 - x0), (ch - 60) / (y1 - y0))));
@@ -4868,7 +4872,7 @@ const ED = (function () {
     if (!a || typeof a.get_defs !== "function") {
       if (tries > 200) {  // 约 40 秒仍不就绪才报错
         showError("无法连接后端：window.pywebview.api.get_defs 始终不可用。\n" +
-                  "（pywebview/WebView2 注入失败？可设 AOE4_EDITOR_DEBUG=1 开开发者工具排查）");
+                  "（pywebview/WebView2 注入失败？可设 AOE4_FLOW_EDITOR_DEBUG=1 开开发者工具排查）");
         return;
       }
       setTimeout(() => pullWhenReady(tries + 1), 200);

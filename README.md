@@ -1,7 +1,9 @@
-# AOE4 自动化工具
+# AoE4 Flow · 帝国时代 4 自动化助手
 
-《帝国时代4》自动化工具。**3.0 起，本项目主体是一套「节点式可视化自动化引擎」**：在网页编辑器里拖拽节点、连线，像搭积木一样组出自己的自动化流程（内置「统一生产：村民/乡骑/商人」开箱即用）。3.0 之前那套「固定写死的自动出农工具」(v2.x) 仍保留在仓库，见[文末附录](#附录旧版固定工具-v2x)。
+**为《帝国时代4》减轻重复操作，用节点流程表达生产逻辑。** AoE4 Flow 源于和朋友联机时的自动出农需求，经过多轮迭代，支持村民、乡骑、商人、渔船等自动生产，并逐步发展为可自定义图像识别与键鼠操作的节点引擎。默认流程、模板与界面配置围绕《帝国时代4》设计；其他用途可使用感知、判断和输入节点自行编排与适配。3.0 之前的固定出农工具仍保留在仓库，见[文末附录](#附录旧版固定工具-v2x)。
 
+> **原名：AOE4 Flow Editor / AoE4 自动生产助手。** 改名不改变 `.flow.json` 格式、节点类型、模板名称或游戏内快捷键。用户偏好从旧目录兼容读取，新设置保存至 `%APPDATA%\AoE4Flow\settings.json`；旧目录不会删除。旧环境变量 `AOE4_EDITOR_DEBUG`、`AOE4_NO_ELEVATE` 仍兼容。
+>
 > ⚠️ 需要管理员权限（用于操作期间的输入屏蔽）。模板/坐标默认基于 2560×1440 + 中国阵营 + HDR 关闭，其它分辨率/阵营在节点上重新框选区域、重截模板即可。
 
 ## 引擎是什么
@@ -14,6 +16,26 @@
 节点分五类：**感知**（截屏/模板匹配/OCR）、**逻辑**（与或非/比较/算式/分支）、**操作**（按键/点击/输入屏蔽/编组锁）、**游戏**（三态遮挡检测/选中建筑计数/产能计算）、**控制**（每帧触发/条件/开关/延时）。流程存成 `*.flow.json`，纯数据节点按帧记忆化（整屏只截一次、多处切片复用）。
 
 编辑器基于 **LiteGraph.js + pywebview**，支持：节点内直接编辑参数、框选区域/截取模板等采集工具、🖼运行预览（看节点"看到的画面"+置信度）、⏱耗时监控、断点单步、**分组折叠（组≈函数，可嵌套）**、控制面板置顶常用旋钮、游戏内半透明覆盖层（启停/调参/资源监控）。
+
+## 下载与使用
+
+从 [GitHub 最新正式版](https://github.com/heroliss/aoe4-flow/releases/latest) 下载 `AoE4-Flow-v3.3.0-Windows-x64.zip`，解压后打开 `AoE4-Flow.exe`。图像识别区域、模板和按键需按自己的实际界面调整；内置游戏流程不代表对所有应用的通用适配。使用图像识别和输入操作前，请确认目标窗口与流程条件。
+
+更新已有安装时请参阅 [品牌与兼容性](docs/品牌与兼容性.md)。只查看或编辑流程可运行 `AoE4-Flow.exe --no-elevate`，无需请求管理员权限。
+
+## 界面一览
+
+统一生产流程可折叠为分组，并将常用生产参数放到控制面板。
+
+![统一生产流程与控制面板](docs/screenshots/editor-overview-native.jpg)
+
+图内搜索定位识别节点，查看 SDR／HDR 参数、窗口条件与说明。
+
+![识别节点与参数说明](docs/screenshots/editor-node-parameters-native.jpg)
+
+悬浮条只保留启停、生产开关及监控设置；截图为默认深色模式，流程未运行。
+
+![无品牌紧凑悬浮条](docs/screenshots/topbar-native.jpg)
 
 ## 快速开始（引擎）
 
@@ -28,11 +50,12 @@ python run_headless.py --dry-run          # 只打日志、不真正发按键（
 
 python selfcheck.py                       # 引擎自检 + 重新生成内置 flows/combined.flow.json
 
-python build.py --editor                  # 打包成 exe → build/aoe4_editor_cpu/AOE4-FlowEditor.exe（首次自动建临时 venv 装 CPU 依赖）
+python build.py --editor                  # 打包成 exe → build/aoe4_flow_editor_cpu/AoE4-Flow.exe（首次自动建临时 venv 装 CPU 依赖）
 ```
 
-- 编辑器需管理员权限做"输入屏蔽"；拒绝 UAC 也能编辑，仅屏蔽不生效。设 `AOE4_EDITOR_DEBUG=1` 可开 WebView2 开发者工具。
+- 编辑器需管理员权限做"输入屏蔽"；拒绝 UAC 也能编辑，仅屏蔽不生效。设 `AOE4_FLOW_EDITOR_DEBUG=1` 可开 WebView2 开发者工具。
 - 游戏内**半透明覆盖层**依赖较新的 **WebView2 运行时**（Win11 自带；老 Win10 可能缺/旧 → 覆盖层会自动降级为不透明深色条，并提示去 [WebView2 下载页](https://developer.microsoft.com/microsoft-edge/webview2/) 装一次即可恢复玻璃透明）。
+- 悬浮工具条默认使用清晰的深色背景；在工具条设置里关闭“不透明”可使用玻璃效果。已保存的透明偏好继续保留。
 - 内置流程的所有区域/模板/按键/成本均为占位默认值，请按你的分辨率与实际界面在节点上调整（开🖼预览核对最直观）。
 
 ## 游戏设置要求（引擎 / 旧版通用）
@@ -115,9 +138,9 @@ docs/架构与开发指南.md     架构与二次开发文档
 
 该设置允许工具通过H键同时选中所有城镇中心，实现多TC同时生产村民。如果不设置此快捷键，工具只能在单TC时正常工作。
 
-### 方式一：直接运行exe（推荐）
+### 方式一：打包经典工具
 
-1. 从 [Releases](../../releases) 下载最新版本的 `AOE4-AutoVillager.exe`
+1. 执行 `python build.py`，生成 `build/aoe4_flow_legacy_cpu/AoE4-Flow-Legacy.exe`（正式版默认分发节点编辑器）
 2. 默认管理员身份运行
 3. 配置文件（`shortcuts.json`、`config_override.json`）会自动保存在exe同目录
 
@@ -200,7 +223,7 @@ python build.py --clean      # 清理包括虚拟环境（强制重新下载依�
 
 **CPU精简版原理：** 自动创建临时虚拟环境，安装CPU-only版本的PyTorch后打包，确保不包含CUDA库，体积大幅缩小。CPU版中GPU加速选项不可用（配置窗口中不显示）。虚拟环境默认保留以便复用。
 
-打包完成后，exe文件在 `build/aoe4_gui_cpu/` 目录中。
+打包完成后，exe文件在 `build/aoe4_flow_legacy_cpu/` 目录中。
 
 ## 配置说明
 
@@ -575,7 +598,7 @@ print(f"GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'C
 ## 目录结构
 
 ```
-AOE4-AutoVillager-Tool/
+aoe4-flow/
 ├── gui_app.py                     # GUI图形界面（Tkinter）
 ├── main.py                        # 命令行主程序
 ├── build.py                       # PyInstaller打包脚本
@@ -622,7 +645,7 @@ AOE4-AutoVillager-Tool/
 
 ## 技术栈
 
-- Python 3.8+
+- Python 3.11+（当前 Windows 正式包使用 Python 3.13）
 - OpenCV - 图像处理与模板匹配
 - EasyOCR - 文字识别
 - mss - 高速屏幕截图

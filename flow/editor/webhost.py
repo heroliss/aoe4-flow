@@ -469,8 +469,9 @@ class Api:
         self._overlay_content_alpha = 100    # 覆盖层【内容】不透明度 30~100（文字等；与背景独立）
         self._overlay_frost = 1              # 毛度：0=无(透明渐变) 1=轻(模糊) 2=重(亚克力)；默认轻
         # 强制不透明深色背景：解决【个别机器覆盖层发白】（WebView2 透明在某些 GPU/合成/透明效果关闭下失效）。
-        # 持久化到 %APPDATA%（per-machine），默认关=玻璃。开启后覆盖层走深色底（与自动检测同一条兜底路径）。
-        self._overlay_opaque = bool(user_settings.get_setting("overlay_opaque"))
+        # 持久化到 %APPDATA%；深色底与自动检测走同一条兜底路径，可在设置中切回玻璃。
+        # 新安装优先保证可读性；已有用户明确保存的透明选择继续保留。
+        self._overlay_opaque = bool(user_settings.get_setting("overlay_opaque", True))
         self._overlay_stop_hover = False     # 停止 hover 轮询线程标志
         self._overlay_hover_thread = None    # 光标 hover 轮询线程（自动切换穿透/可点击）
         self._closing = False                # 程序正在关闭：此后一律不再 BeginInvoke 原生窗体（防关闭崩溃）
@@ -981,7 +982,7 @@ class Api:
                   on_top=True, frameless=True, easy_drag=False, transparent=True,
                   min_size=(80, 20), background_color="#0B0E14")
         try:
-            self._overlay_window = webview.create_window("AOE4 Overlay", url=page, **kw)
+            self._overlay_window = webview.create_window("AoE4 Flow 悬浮工具条", url=page, **kw)
             try:
                 self._overlay_window.events.closed += self._on_overlay_closed
             except Exception:
@@ -1009,7 +1010,7 @@ class Api:
         kw = dict(width=tw, height=th, x=tx, y=ty, js_api=self, on_top=True, frameless=True,
                   easy_drag=False, transparent=True, min_size=(80, 20), background_color="#0B0E14")
         try:
-            self._overlay_toast_window = webview.create_window("AOE4 Toast", url=page, **kw)
+            self._overlay_toast_window = webview.create_window("AoE4 Flow 提醒", url=page, **kw)
             try:
                 self._overlay_toast_window.events.loaded += self._overlay_toast_on_loaded
             except Exception:
@@ -1123,7 +1124,7 @@ class Api:
                   frameless=True, easy_drag=False, transparent=True,
                   min_size=(120, 80), background_color="#0B0E14")
         try:
-            self._overlay_cfg_window = webview.create_window("AOE4 Overlay 设置", url=page, **kw)
+            self._overlay_cfg_window = webview.create_window("AoE4 Flow 悬浮工具条设置", url=page, **kw)
             self._overlay_cfg_shown = True
             try:
                 self._overlay_cfg_window.events.closed += self._on_overlay_cfg_closed
@@ -1176,7 +1177,7 @@ class Api:
                   frameless=True, easy_drag=False, transparent=True,
                   min_size=(80, 20), background_color="#0B0E14")
         try:
-            self._overlay_mon_window = webview.create_window("AOE4 Overlay 监控", url=page, **kw)
+            self._overlay_mon_window = webview.create_window("AoE4 Flow 资源监控", url=page, **kw)
             self._overlay_mon_shown = True
             try:
                 self._overlay_mon_window.events.closed += self._on_overlay_mon_closed
@@ -2017,5 +2018,5 @@ def launch(graph: Optional[Graph] = None, path: Optional[str] = None):
         pass
     # 前端通过 js_api 轮询拉取启动数据（pywebview 注入 api 有延迟，前端会等到就绪再拉），
     # 不再用 evaluate_js 主动 push —— 那条路在 WebView2 上有跨线程 COM 报错且不稳定。
-    debug = os.environ.get("AOE4_EDITOR_DEBUG") == "1"  # 置 1 可开 WebView2 开发者工具
+    debug = os.environ.get("AOE4_FLOW_EDITOR_DEBUG", os.environ.get("AOE4_EDITOR_DEBUG")) == "1"  # 置 1 可开 WebView2 开发者工具
     webview.start(debug=debug)
